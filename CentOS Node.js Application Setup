@@ -1,0 +1,72 @@
+https://www.digitalocean.com/community/tutorials/how-to-set-up-a-node-js-application-for-production-on-centos-7
+____________________________________________________________________________________________________________________
+_________How To Set Up a Node.js Application for Production on CentOS 7__________________________________________
+____________________________________________________________________________________________________________________
+
+Node.js is an open source Javascript runtime environment for easily building server-side and networking applications. The platform runs on Linux, OS X, FreeBSD, and Windows, and its applications are written in JavaScript. Node.js applications can be run at the command line but we will teach you how to run them as a service, so they automatically restart on reboot or failure, so you can use them in a production environment.
+
+In this tutorial, we will cover setting up a production-ready Node.js environment that is composed of two CentOS 7 servers; one server will run Node.js applications managed by PM2, while the other will provide users with access to the application through an Nginx reverse proxy to the application server.
+
+____________________________________________________________________________________________________________________
+_________Prereq's__________________________________________________________________________________________________
+____________________________________________________________________________________________________________________
+
+This guide uses two CentOS 7 servers with private networking (in the same datacenter). Private networking can be configured on new servers when they are being created (in the "Select additional options" section). We will refer to them by the following names:
+
+app: The server where we will install Node.js runtime, your Node.js application, and PM2.
+
+web: The server where we will install the Nginx web server, which will act as a reverse proxy to your application. Users will accesss this server's public IP address to get to your Node.js application.
+
+____________________________________________________________________________________________________________________
+Note: Refer to the "Digital Ocean Documentation - How to Enable Private Networking on Droplet" (https://www.digitalocean.com/docs/networking/private-networking/how-to/enable/) if you intend on using an existing server that doesn't currently have private networking configured.
+____________________________________________________________________________________________________________________
+
+Before you begin this guide, you should have a regular, non-root user with "sudo" privileges configured on both of your servers--this is the user that you should log in to your server as. You can learn how to configure a regular user account by following our "initial server setup guide for CentOS 7" (https://www.digitalocean.com/community/tutorials/initial-server-setup-with-centos-7).
+____________________________________________________________________________________________________________________
+
+It is possible to use a single server for this tutorial, but you will have to make a few changes along the way. Simply use the localhost IP address, i.e. "127.0.0.1", wherever the app server's private IP address is used.
+____________________________________________________________________________________________________________________
+
+Here is a digram of what your setup will be after following this tutorial:
+
+[User] ----> http://example.com ----> [Web Server (Reverse Proxy)] ---- Private IP ----> [App Server - Node.js Application (Private Network)]
+
+____________________________________________________________________________________________________________________
+
+If you want to be able to access your web server via a domain name, instead of its public IP address, purchase a domain name then follow these tutorials:
+
+"How To Set Up A Host Name with DigitalOcean" (https://www.digitalocean.com/community/tutorials/how-to-set-up-a-host-name-with-digitalocean)
+"How to Point to DigitalOcean Nameservers From Common Domain Registrars" (How to Point to DigitalOcean Nameservers From Common Domain Registrars)
+____________________________________________________________________________________________________________________
+
+Let's get started by installing the Node.js runtime on the app server.
+
+____________________________________________________________________________________________________________________
+___________Step 1 - Installing Node.js______________________________________________________________________________
+____________________________________________________________________________________________________________________
+
+We will install the latest LTS release of Node.js, on the app server.
+
+SSH to your app server using the regular, non-root user with "sudo" privileges.
+
+On the app server, let's use "curl" to download the "NodeSource" (https://github.com/nodesource/distributions) RPM Repository configuration file:
+
+$ curl -L -o nodesource_setup.sh https://rpm.nodesource.com/setup_10.x
+
+"CURL" will use the HTTPS protocol to download the setup script to your server, with the output including information relevant to the download:
+
+[eugene@centos-s-1vcpu-1gb-sfo2-01 ~]$ curl -L -o nodesource_setup.sh https://rpm.nodesource.com/setup_10.x
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 12100  100 12100    0     0   181k      0 --:--:-- --:--:-- --:--:--  181k
+[eugene@centos-s-1vcpu-1gb-sfo2-01 ~]$ 
+____________________________________________________________________________________________________________________
+
+Next, you should inspect the script's contents. 
+
+
+
+
+
+
+
