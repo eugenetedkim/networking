@@ -168,7 +168,217 @@ We will use Node Packaged Modules (NPM), which is basically a package manager fo
 
 $ sudo npm install pm2@latest -g
 
+We will cover a few basic uses of PM2.
+
+The first thing you want to do is to use the pm2 start command to run the application, hello.js, in the background:
+
+$ pm2 start hello.js
+
+This also adds your application to PM2's process list, which is outputted every time you start an application:
+
+Output
+┌──────────┬────┬──────┬───────┬────────┬─────────┬────────┬─────────────┬──────────┐
+│ App name │ id │ mode │ pid   │ status │ restart │ uptime │ memory      │ watching │
+├──────────┼────┼──────┼───────┼────────┼─────────┼────────┼─────────────┼──────────┤
+│ hello    │ 0  │ fork │ 30099 │ online │ 0       │ 0s     │ 14.227 MB   │ disabled │
+└──────────┴────┴──────┴───────┴────────┴─────────┴────────┴─────────────┴──────────┘
+
+[eugene@centos-s-1vcpu-1gb-sfo2-01 ~]$ pm2 start hello.js
+
+                        -------------
+
+__/\\\\\\\\\\\\\____/\\\\____________/\\\\____/\\\\\\\\\_____
+ _\/\\\/////////\\\_\/\\\\\\________/\\\\\\__/\\\///////\\\___
+  _\/\\\_______\/\\\_\/\\\//\\\____/\\\//\\\_\///______\//\\\__
+   _\/\\\\\\\\\\\\\/__\/\\\\///\\\/\\\/_\/\\\___________/\\\/___
+    _\/\\\/////////____\/\\\__\///\\\/___\/\\\________/\\\//_____
+     _\/\\\_____________\/\\\____\///_____\/\\\_____/\\\//________
+      _\/\\\_____________\/\\\_____________\/\\\___/\\\/___________
+       _\/\\\_____________\/\\\_____________\/\\\__/\\\\\\\\\\\\\\\_
+        _\///______________\///______________\///__\///////////////__
 
 
+                          Runtime Edition
+
+        PM2 is a Production Process Manager for Node.js applications
+                     with a built-in Load Balancer.
+
+                Start and Daemonize any application:
+                $ pm2 start app.js
+
+                Load Balance 4 instances of api.js:
+                $ pm2 start api.js -i 4
+
+                Monitor in production:
+                $ pm2 monitor
+
+                Make pm2 auto-boot at server restart:
+                $ pm2 startup
+
+                To go further checkout:
+                http://pm2.io/
 
 
+                        -------------
+
+[PM2] Spawning PM2 daemon with pm2_home=/home/eugene/.pm2
+[PM2] PM2 Successfully daemonized
+[PM2] Starting /home/eugene/hello.js in fork_mode (1 instance)
+[PM2] Done.
+┌─────┬──────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id  │ name     │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├─────┼──────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0   │ hello    │ default     │ N/A     │ fork    │ 15840    │ 0s     │ 0    │ online    │ 0%       │ 25.8mb   │ eugene   │ disabled │
+└─────┴──────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[eugene@centos-s-1vcpu-1gb-sfo2-01 ~]$ 
+
+As you can see, PM2 automatically assigns an App name (based on the filename, without the ".js" extension) and a PM2 id. PM2 also maintains other information, such as the PID of the process, its current status, and memory usage.
+
+Applications that are running under PM2 will be restarted automatically if the application crashes or is killed, but an additional step needs to be taken to get the application to launch on system startup (boot or reboot). Luckily, PM2 provides an easy way to do this, the "startup" subcommand.
+
+The "startup" subcommand generates and configures a startup script to launch PM2 and its managed processes on servert boots. You must also specify the init system you are running on, which is systemd, in our case:
+
+$ sudo pm2 startup systemd
+
+Output
+[PM2] Generating system init script in /etc/systemd/system/pm2.service
+[PM2] Making script booting at startup...
+[PM2] -systemd- Using the command:
+      su root -c "pm2 dump && pm2 kill" && su root -c "systemctl daemon-reload && systemctl enable pm2 && systemctl start pm2"
+[PM2] Dumping processes
+[PM2] Stopping PM2...
+[PM2] All processes have been stopped and deleted
+[PM2] PM2 stopped
+[PM2] Done.
+
+
+[eugene@centos-s-1vcpu-1gb-sfo2-01 ~]$ sudo pm2 startup systemd
+[sudo] password for eugene: 
+
+                        -------------
+
+__/\\\\\\\\\\\\\____/\\\\____________/\\\\____/\\\\\\\\\_____
+ _\/\\\/////////\\\_\/\\\\\\________/\\\\\\__/\\\///////\\\___
+  _\/\\\_______\/\\\_\/\\\//\\\____/\\\//\\\_\///______\//\\\__
+   _\/\\\\\\\\\\\\\/__\/\\\\///\\\/\\\/_\/\\\___________/\\\/___
+    _\/\\\/////////____\/\\\__\///\\\/___\/\\\________/\\\//_____
+     _\/\\\_____________\/\\\____\///_____\/\\\_____/\\\//________
+      _\/\\\_____________\/\\\_____________\/\\\___/\\\/___________
+       _\/\\\_____________\/\\\_____________\/\\\__/\\\\\\\\\\\\\\\_
+        _\///______________\///______________\///__\///////////////__
+
+
+                          Runtime Edition
+
+        PM2 is a Production Process Manager for Node.js applications
+                     with a built-in Load Balancer.
+
+                Start and Daemonize any application:
+                $ pm2 start app.js
+
+                Load Balance 4 instances of api.js:
+                $ pm2 start api.js -i 4
+
+                Monitor in production:
+                $ pm2 monitor
+
+                Make pm2 auto-boot at server restart:
+                $ pm2 startup
+
+                To go further checkout:
+                http://pm2.io/
+
+
+                        -------------
+
+[PM2] Init System found: systemd
+Platform systemd
+Template
+[Unit]
+Description=PM2 process manager
+Documentation=https://pm2.keymetrics.io/
+After=network.target
+
+[Service]
+Type=forking
+User=root
+LimitNOFILE=infinity
+LimitNPROC=infinity
+LimitCORE=infinity
+Environment=PATH=/sbin:/bin:/usr/sbin:/usr/bin:/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+Environment=PM2_HOME=/root/.pm2
+PIDFile=/root/.pm2/pm2.pid
+Restart=on-failure
+
+ExecStart=/usr/lib/node_modules/pm2/bin/pm2 resurrect
+ExecReload=/usr/lib/node_modules/pm2/bin/pm2 reload all
+ExecStop=/usr/lib/node_modules/pm2/bin/pm2 kill
+
+[Install]
+WantedBy=multi-user.target
+
+Target path
+/etc/systemd/system/pm2-root.service
+Command list
+[ 'systemctl enable pm2-root' ]
+[PM2] Writing init configuration in /etc/systemd/system/pm2-root.service
+[PM2] Making script booting at startup...
+[PM2] [-] Executing: systemctl enable pm2-root...
+Created symlink /etc/systemd/system/multi-user.target.wants/pm2-root.service → /etc/systemd/system/pm2-root.service.
+[PM2] [v] Command successfully executed.
++---------------------------------------+
+[PM2] Freeze a process list on reboot via:
+$ pm2 save
+
+[PM2] Remove init script via:
+$ pm2 unstartup systemd
+[eugene@centos-s-1vcpu-1gb-sfo2-01 ~]$ 
+
+To ensure PM2 knows which applications to start on boot, we need to save the current process list. To save the list:
+
+$ pm2 save
+
+You will see output like the following, which indicates that the PM2 process list has been saved:
+
+Output
+[PM2] Saving current process list...
+[PM2] Successfully saved in /home/deployer/.pm2/dump.pm2
+
+[eugene@centos-s-1vcpu-1gb-sfo2-01 ~]$ pm2 save
+[PM2] Saving current process list...
+[PM2] Successfully saved in /home/eugene/.pm2/dump.pm2
+[eugene@centos-s-1vcpu-1gb-sfo2-01 ~]$ 
+
+Now your PM2-managed applications should start automatically on boot.
+
+PM2 provides many subcommands that allow you to manage or look up information about your applications. Note that running "pm2" without any arguments will display a help page, including example usage, that covers PM2 usage in more detail than this section of the tutorial.
+
+Stop an application with this command (specify the PM2 "App name" or "id"):
+
+$ pm2 stop example
+
+Restart an application with this command (specify the PM2 "App name" or "id"):
+
+$ pm2 restart example
+
+The list of applications currently manged by PM2 can also be looked up with the "list" subcommand:
+
+$ pm2 list
+
+More information about a specific application can be found by using the "info" subcommand (specify the PM2 App name or id):
+
+$ pm2 info example
+
+The PM2 process monitor can be pulled up with the "monit" subcommand. This display sthe application status, CPU, and memory usage:
+
+$ pm2 monit
+
+____________________________________________________________________________________________________________________
+Note: Running PM2's "monit" command will block additional commands until the application is killed by pressing "CRTL+C".
+____________________________________________________________________________________________________________________
+
+Now that your Node.js application is running, and managed by PM2, let's set up the reverse proxy.
+
+____________________________________________________________________________________________________________________
+___________Step 4 - Setting Up and Nginx Reverse Proxy Server_______________________________________________________
+____________________________________________________________________________________________________________________
