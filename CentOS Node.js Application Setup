@@ -62,9 +62,111 @@ $ curl -L -o nodesource_setup.sh https://rpm.nodesource.com/setup_10.x
 [eugene@centos-s-1vcpu-1gb-sfo2-01 ~]$ 
 ____________________________________________________________________________________________________________________
 
-Next, you should inspect the script's contents. 
+Next, you should inspect the script's contents. The following command will open the NodeSource setup script in your servers console, which you can then cross-reference with the "NodeSource setup script"  (https://raw.githubusercontent.com/nodesource/distributions/master/rpm/setup_10.x) (from the NodeSource Distributions Github repository) to confirm that the script downloaded properly.
 
+$ vi nodesource_setup.sh
 
+Once satisfied with the file, exit "vi" by typing ":q" to "quit" and return to the command line.
+
+Now let's run the setup script to install the NodeSource RPM Repository. This will enable us to access NodeSource's repository from within the "yum" package manager:
+
+$ sudo -E bash nodesource_setup.sh
+
+Before installing Node.js it is important to clean all the cached information from "yum". Cleaning the cache will ensure that yum uses the network connection to get Node.js from our new NodeSource Repository (which will prevent any potential conflicts caused by outdated packages):
+
+$ sudo yum clean all
+
+Next we will download and make usable all the metadata for the currently enabled yum repos. This will ensure that our yum queries are completed as quickly as possible:
+
+$ sudo yum makecache fast
+
+To compile and install native add-ons from "npm" we also need to install build tools:
+
+$ sudo yum install -y gcc-c++ make
+
+Now we can install the lastest release of the Node.js package:
+
+$ sudo yum install -y nodejs
+
+Verify that Node is installed by checking its version with this command:
+
+$ sudo node -v
+
+[eugene@centos-s-1vcpu-1gb-sfo2-01 ~]$ sudo node -v
+v10.20.1
+
+The Node.js runtime is now installed, and ready to run an application. Let's write a Node.js application.
+
+____________________________________________________________________________________________________________________
+___________Step 2 - Creating the Node.js Application_______________________________________________________________
+____________________________________________________________________________________________________________________
+
+Now we will create a Hello World application that simply returns "Hello World" to any HTTP requests. This is a sample application that will help you get Node.js set up, which you can replace with your own application--just make sure that you modify your application to listen on the appropriate IP addresses and ports.
+
+Because we want our Node.js application to serve requests that come from our reverse proxy server (web) we will use our app server's private network interface for inter-server communication. Look up your app server's private network address.
+
+If you are using a DigitalOcean Droplet as your server, you may look up the server's private IP address through the Metadata service. On the app server, use the curl command to retrive the IP address now:
+
+$ curl -sw "\n" http://169.254.169.254/metadata/v1/interfaces/private/0/ipv4/address
+
+You will want to copy the output (the private IP address), as it will be used to configure the Node.js application.
+
+Next, create and open your Node.js application for editing. For this tutorial, we will use "vi" to edit a sample application called "hello.js":
+
+$ vi hello.js
+
+Insert the following code into the file, and be sure to substitute the app server's private IP address for both fo the highlighted "APP_PRIVATE_IP_ADDRESS" items. If you want to, you may also replace the highlighted port, "8080", in both locations (be sure to use a non-admin port, i.e. "1024" or greater):
+
+ 127.0.0.1
+____________________________________________________________________________________________________________________
+                                            hello.js
+____________________________________________________________________________________________________________________
+var http = require('http');
+http.createServer(function (req, res) {
+  res.writeHead(200, {'Content-Type': 'text/plain'});
+  res.end('Hello World\n');
+}).listen(8080, '127.0.0.1');
+console.log('Server running at http://127.0.0.1:8080/');
+____________________________________________________________________________________________________________________
+
+This Node.js application simply listens on the specified IP address and port, and returns "Hello World" with a 200 HTTP success code. This means that the application is only reachable from servers on the same private network, such as our web server.
+
+If you want to test if your application works, run this "node" command on the app server:
+
+$ node hello.js
+
+____________________________________________________________________________________________________________________
+Note: Running a Node.js application in this manner will block additional commands until the application is killed by pressing "CTRL+C".
+____________________________________________________________________________________________________________________
+
+It will save a lot of Nginx debugging if we first test that our web server is able to communicate with the Node.js application on app.
+
+In order to test the application, open another terminal session and connect to your web server. Because the web server is on the same private network, it should be able to reach the private IP address of the app server using "curl". Be sure to substitute in the app server's private IP address for APP_PRIVATE_IP_ADDRESS, and the port if you changed it
+
+$ curl http://APP_PRVIATE_IP_ADDRESS:8080
+
+If you see the following output, the application is working properly and listening on the proper IP address and port.
+
+Node Application Output
+Hello World
+
+[eugene@centos-s-1vcpu-1gb-sfo2-01 ~]$ curl http://127.0.0.1:8080/
+Hello World
+[eugene@centos-s-1vcpu-1gb-sfo2-01 ~]$ 
+
+If you do not see the proper output, make sure that your Node.js application is running, and configured to listen on the proper IP address and port.
+
+On the app server, be sure to kill the application by pressing "CTRL+C"
+
+____________________________________________________________________________________________________________________
+___________Step 3 - Installing and Using PM2_______________________________________________________________
+____________________________________________________________________________________________________________________
+
+Now we will isntall PM2, which is a process manager for Node.js applications. PM2 provides an easy way to manage and daemonize applications (run them as a service).
+
+We will use Node Packaged Modules (NPM), which is basically a package manager for Node modules that installs with Node.js, to install PM2 on our app server. Use this command to install PM2:
+
+$ sudo npm install pm2@latest -g
 
 
 
